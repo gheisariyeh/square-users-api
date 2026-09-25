@@ -13,4 +13,6 @@ public interface UserDao {
     void deleteById(String id);
 
     boolean existsById(String id);
+
+    Optional<User> findByUsername(String username);
 }

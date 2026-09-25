@@ -1,11 +1,14 @@
 package com.afsaneh.square_users_api.controller;
 
+import com.afsaneh.square_users_api.dto.UserCreationParams;
+import com.afsaneh.square_users_api.dto.UserResponse;
 import com.afsaneh.square_users_api.entity.User;
 import com.afsaneh.square_users_api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -33,8 +36,12 @@ public class UserController {
             description = "User created successfully"
     )
     @PostMapping
-    public User createUser() {
-        return userService.createUser();
+    public UserResponse createUser(
+            @RequestBody UserCreationParams params
+    ) {
+        User user = userService.createUser(params.username(), params.password());
+
+        return new UserResponse(user.getId());
     }
 
     @Operation(
@@ -45,14 +52,20 @@ public class UserController {
             responseCode = "200",
             description = "User lookup completed"
     )
+    @PreAuthorize(
+            "hasAuthority('ROLE_ADMIN') or " +
+                    "(hasAuthority('ROLE_USER') and @userSecurity.isOwner(#id, authentication.name))"
+    )
     @GetMapping("/{id}")
-    public Optional<User> getUser(
+    public Optional<UserResponse> getUser(
             @Parameter(
                     description = "Identifier of the user",
                     required = true
             )
-            @PathVariable String id) {
-        return userService.findById(id);
+            @PathVariable String id
+    ) {
+        return userService.findById(id)
+                .map(user -> new UserResponse(user.getId()));
     }
 
     @Operation(
@@ -63,6 +76,7 @@ public class UserController {
             responseCode = "200",
             description = "Delete request completed"
     )
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public void deleteUser(
             @Parameter(

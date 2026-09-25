@@ -34,4 +34,9 @@ public class JpaUserDao implements UserDao {
     public boolean existsById(String id) {
         return userRepository.existsById(id);
     }
+
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
 }
